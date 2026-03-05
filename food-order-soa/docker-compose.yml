@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # User Service
+  user-service:
+    build: ./services/user-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - JWT_SECRET=your_secret_here
+      - DB_PATH=./data/user.db
+      - NODE_ENV=production
+    volumes:
+      - user-data:/app/data
+
+  # Restaurant Service
+  restaurant-service:
+    build: ./services/restaurant-service
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - JWT_SECRET=your_secret_here
+      - DB_PATH=./data/restaurant.db
+      - NODE_ENV=production
+    volumes:
+      - restaurant-data:/app/data
+
+  # Order Service
+  order-service:
+    build: ./services/order-service
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - JWT_SECRET=your_secret_here
+      - DB_PATH=./data/order.db
+      - RESTAURANT_SERVICE_URL=http://restaurant-service:3002
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3004
+      - NODE_ENV=production
+    volumes:
+      - order-data:/app/data
+    depends_on:
+      - restaurant-service
+      - notification-service
+
+  # Notification Service
+  notification-service:
+    build: ./services/notification-service
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - JWT_SECRET=your_secret_here
+      - DB_PATH=./data/notification.db
+      - NODE_ENV=production
+    volumes:
+      - notification-data:/app/data
+
+  # API Gateway
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - JWT_SECRET=your_secret_here
+      - USER_SERVICE_URL=http://user-service:3001
+      - RESTAURANT_SERVICE_URL=http://restaurant-service:3002
+      - ORDER_SERVICE_URL=http://order-service:3003
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3004
+      - NODE_ENV=production
+    depends_on:
+      - user-service
+      - restaurant-service
+      - order-service
+      - notification-service
+
+volumes:
+  user-data:
+  restaurant-data:
+  order-data:
+  notification-data:
