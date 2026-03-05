@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const rateLimit = require('express-rate-limit');
 const { authenticateToken } = require('./middleware/auth');
 
 const app = express();
@@ -15,6 +16,26 @@ const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http:/
 
 app.use(cors({ origin: 'http://localhost:3000' }));
 app.use(express.json());
+
+// Rate limiters
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many requests, please try again later' }
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many authentication attempts, please try again later' }
+});
+
+app.use('/api/auth', authLimiter);
+app.use(generalLimiter);
 
 // Request logger
 app.use((req, res, next) => {

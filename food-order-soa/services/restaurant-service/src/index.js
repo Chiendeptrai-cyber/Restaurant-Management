@@ -2,6 +2,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const restaurantRoutes = require('./routes/restaurants');
 const menuRoutes = require('./routes/menu');
 const internalRoutes = require('./routes/internal');
@@ -11,6 +12,16 @@ const PORT = process.env.PORT || 3002;
 
 app.use(cors({ origin: 'http://localhost:3000' }));
 app.use(express.json());
+
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many requests, please try again later' }
+});
+
+app.use(generalLimiter);
 
 // Request logger
 app.use((req, res, next) => {
