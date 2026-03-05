@@ -1,0 +1,38 @@
+// filepath: food-order-soa/services/notification-service/src/index.js
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const notificationRoutes = require('./routes/notifications');
+const internalRoutes = require('./routes/internal');
+
+const app = express();
+const PORT = process.env.PORT || 3004;
+
+app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(express.json());
+
+// Request logger
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    console.log(`[notification-service] ${req.method} ${req.path} ${res.statusCode} ${Date.now() - start}ms`);
+  });
+  next();
+});
+
+app.use('/notifications', notificationRoutes);
+app.use('/internal', internalRoutes);
+
+app.get('/health', (req, res) => {
+  res.json({ success: true, data: { service: 'notification-service', status: 'ok' } });
+});
+
+app.use((req, res) => {
+  res.status(404).json({ success: false, error: 'Route not found' });
+});
+
+app.listen(PORT, () => {
+  console.log(`notification-service running on port ${PORT}`);
+});
+
+module.exports = app;
